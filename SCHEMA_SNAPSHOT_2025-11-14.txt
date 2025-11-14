@@ -1,0 +1,521 @@
+[
+
+  {
+
+    "table_name": "dim_ambiente",
+
+    "column_name": "ambiente_key",
+
+    "data_type": "uuid",
+
+    "is_nullable": "NO",
+
+    "column_default": "gen_random_uuid()"
+
+  },
+
+  {
+
+    "table_name": "dim_ambiente",
+
+    "column_name": "user_id",
+
+    "data_type": "uuid",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ambiente",
+
+    "column_name": "orden_cuarto",
+
+    "data_type": "integer",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ambiente",
+
+    "column_name": "orden_escritorio",
+
+    "data_type": "integer",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ambiente",
+
+    "column_name": "orden_mochila",
+
+    "data_type": "integer",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ambiente",
+
+    "column_name": "ruido_ambiental",
+
+    "data_type": "integer",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ambiente",
+
+    "column_name": "limpieza_personal",
+
+    "data_type": "integer",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ambiente",
+
+    "column_name": "sensacion_espacial",
+
+    "data_type": "text",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ambiente",
+
+    "column_name": "created_at",
+
+    "data_type": "timestamp with time zone",
+
+    "is_nullable": "YES",
+
+    "column_default": "now()"
+
+  },
+
+  {
+
+    "table_name": "dim_date",
+
+    "column_name": "date_key",
+
+    "data_type": "date",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_date",
+
+    "column_name": "fecha",
+
+    "data_type": "date",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_date",
+
+    "column_name": "dia_semana",
+
+    "data_type": "integer",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_date",
+
+    "column_name": "nombre_dia",
+
+    "data_type": "text",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_date",
+
+    "column_name": "semana",
+
+    "data_type": "integer",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_date",
+
+    "column_name": "mes",
+
+    "data_type": "integer",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_date",
+
+    "column_name": "anio",
+
+    "data_type": "integer",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_date",
+
+    "column_name": "tipo_dia",
+
+    "data_type": "text",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_dia_especial",
+
+    "column_name": "dia_especial_key",
+
+    "data_type": "uuid",
+
+    "is_nullable": "NO",
+
+    "column_default": "gen_random_uuid()"
+
+  },
+
+  {
+
+    "table_name": "dim_dia_especial",
+
+    "column_name": "user_id",
+
+    "data_type": "uuid",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_dia_especial",
+
+    "column_name": "tipo",
+
+    "data_type": "text",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_dia_especial",
+
+    "column_name": "descripcion",
+
+    "data_type": "text",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_dia_especial",
+
+    "column_name": "created_at",
+
+    "data_type": "timestamp with time zone",
+
+    "is_nullable": "YES",
+
+    "column_default": "now()"
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "ejercicio_key",
+
+    "data_type": "uuid",
+
+    "is_nullable": "NO",
+
+    "column_default": "gen_random_uuid()"
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "user_id",
+
+    "data_type": "uuid",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "tipo",
+
+    "data_type": "text",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "grupo_muscular",
+
+    "data_type": "text",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "distancia_km",
+
+    "data_type": "numeric",
+
+    "is_nullable": "YES",
+
+    "column_default": "0"
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "pace_min_km",
+
+    "data_type": "numeric",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "duracion_min",
+
+    "data_type": "integer",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "intensidad",
+
+    "data_type": "integer",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "razon_no_ejercicio",
+
+    "data_type": "text",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "descripcion",
+
+    "data_type": "text",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "created_at",
+
+    "data_type": "timestamp with time zone",
+
+    "is_nullable": "YES",
+
+    "column_default": "now()"
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "ejercicio_plan_key",
+
+    "data_type": "uuid",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio",
+
+    "column_name": "momento_dia",
+
+    "data_type": "character varying",
+
+    "is_nullable": "YES",
+
+    "column_default": null
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio_planeado",
+
+    "column_name": "plan_key",
+
+    "data_type": "uuid",
+
+    "is_nullable": "NO",
+
+    "column_default": "gen_random_uuid()"
+
+  },
+
+  {
+
+    "table_name": "dim_ejercicio_planeado",
+
+    "column_name": "user_id",
+
+    "data_type": "uuid",
+
+    "is_nullable": "NO",
+
+    "column_default": null
+
+  },
+
+  ...
