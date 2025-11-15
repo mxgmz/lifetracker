@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { getOrCreateFact } from '@/lib/getOrCreateFact'
 import { updateFact } from '@/lib/updateFact'
 import { upsertDimension } from '@/lib/upsertDimension'
+import { getReferenceData, DEFAULT_REFERENCE_DATA } from '@/lib/referenceData'
 import PageHeader from '@/components/PageHeader'
 import FormBlock from '@/components/FormBlock'
 import Slider from '@/components/Slider'
@@ -19,6 +20,9 @@ import { ArrowLeftIcon, BoltIcon, AcademicCapIcon, HeartIcon, ArrowPathIcon, Exc
 export default function TardePage() {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [pecados, setPecados] = useState(DEFAULT_REFERENCE_DATA.pecados)
+  const [triggersRef, setTriggersRef] = useState(DEFAULT_REFERENCE_DATA.triggers)
+  const [categorias, setCategorias] = useState(DEFAULT_REFERENCE_DATA.categorias)
   const router = useRouter()
   const { register, handleSubmit, watch, setValue } = useForm({
     defaultValues: {
@@ -31,10 +35,12 @@ export default function TardePage() {
       profundidad: 3,
       tentacion: false,
       intensidad: 3,
+      trigger_option: '',
     },
   })
 
   const tentacion = watch('tentacion')
+  const triggerOption = watch('trigger_option')
 
   useEffect(() => {
     checkUser()
@@ -46,7 +52,15 @@ export default function TardePage() {
       router.push('/login')
     } else {
       setUser(session.user)
+      await populateReferenceData()
     }
+  }
+
+  const populateReferenceData = async () => {
+    const data = await getReferenceData()
+    setPecados(data.pecados)
+    setTriggersRef(data.triggers)
+    setCategorias(data.categorias)
   }
 
   const onSubmit = async (data) => {
@@ -114,17 +128,29 @@ export default function TardePage() {
 
       // Handle tentación + momento_dia
       if (data.tentacion && data.tipo_tentacion) {
+        const triggerValue =
+          data.trigger_option && data.trigger_option !== 'otro'
+            ? data.trigger_option
+            : data.trigger_custom || null
+
+        let categoriaValue = data.categoria_tentacion || null
+        if (!categoriaValue && triggerValue) {
+          const match = triggersRef.find((t) => t.nombre === triggerValue)
+          if (match?.categoria) categoriaValue = match.categoria
+        }
+
         const tentacionId = await upsertDimension('dim_tentacion', {
           user_id: user.id,
           momento_dia: 'Tarde',
           fuente_registro: 'Tarde',
           hora_aproximada: new Date().toTimeString().split(' ')[0], // HH:MM:SS
-          trigger_principal: data.trigger || null,
+          trigger_principal: triggerValue,
           pecado_principal: data.tipo_tentacion,
           nivel_riesgo: data.intensidad ? parseInt(data.intensidad) : null,
           contexto: data.contexto || null,
           gano_tentacion: data.gano_tentacion || false,
           descripcion: data.accion_autocontrol || null,
+          categoria: categoriaValue || null,
         })
         updates.tentacion_key = tentacionId
 
@@ -145,7 +171,7 @@ export default function TardePage() {
           })
       }
 
-      await updateFact(factId, updates)
+      await updateFact(factId, updates, user.id)
 
       router.push('/dashboard?success=tarde')
     } catch (error) {
@@ -178,7 +204,7 @@ export default function TardePage() {
           reference="Salmos 139:23"
         />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Block 1: Estado Mental (Refresher) */}
           <FormBlock title="Estado Mental (Refresher)" icon={BoltIcon}>
             <div className="grid grid-cols-2 gap-4">
@@ -264,41 +290,41 @@ export default function TardePage() {
 
           {/* Block 2: Estudio */}
           <FormBlock title="Estudio" icon={AcademicCapIcon}>
-            <TextInput
-              label="Tema"
-              name="tema"
-              placeholder="¿Qué estudiaste?"
-              register={register}
-            />
-            <TextInput
+              <TextInput
+                label="Tema"
+                name="tema"
+                placeholder="¿Qué estudiaste?"
+                register={register}
+              />
+              <TextInput
               label="Tiempo (minutos)"
               name="tiempo_min"
-              type="number"
-              placeholder="0"
-              register={register}
-            />
-            <Slider
-              label="Profundidad"
-              name="profundidad"
-              register={register}
-              min={1}
+                type="number"
+                placeholder="0"
+                register={register}
+              />
+              <Slider
+                label="Profundidad"
+                name="profundidad"
+                register={register}
+                min={1}
               max={5}
               value={watch('profundidad')}
-              onChange={(e) => setValue('profundidad', parseInt(e.target.value))}
-            />
-            <Select
-              label="Material usado"
-              name="material_usado"
-              register={register}
-              options={[
+                onChange={(e) => setValue('profundidad', parseInt(e.target.value))}
+              />
+              <Select
+                label="Material usado"
+                name="material_usado"
+                register={register}
+                options={[
                 { value: 'Video', label: 'Video' },
-                { value: 'Libro', label: 'Libro' },
+                  { value: 'Libro', label: 'Libro' },
                 { value: 'Clase', label: 'Clase' },
                 { value: 'Proyecto', label: 'Proyecto' },
-                { value: 'Otro', label: 'Otro' },
-              ]}
-              placeholder="Selecciona..."
-            />
+                  { value: 'Otro', label: 'Otro' },
+                ]}
+                placeholder="Selecciona..."
+              />
             <TextInput
               label="Insight aprendido"
               name="insight_aprendido"
@@ -335,66 +361,84 @@ export default function TardePage() {
 
           {/* Block 5: Tentación */}
           <FormBlock title="Tentación" icon={ExclamationTriangleIcon}>
-            <Toggle
-              label="¿Tuviste una tentación?"
-              name="tentacion"
-              register={register}
-            />
-            {tentacion && (
+              <Toggle
+                label="¿Tuviste una tentación?"
+                name="tentacion"
+                register={register}
+              />
+              {tentacion && (
               <div className="space-y-4 pt-2">
-                <Select
+                  <Select
                   label="Tipo"
-                  name="tipo_tentacion"
-                  register={register}
-                  required
-                  options={[
-                    { value: 'Comida', label: 'Comida' },
-                    { value: 'Redes sociales', label: 'Redes sociales' },
-                    { value: 'Pornografía', label: 'Pornografía' },
-                    { value: 'Pereza', label: 'Pereza' },
-                    { value: 'Gastos', label: 'Gastos' },
-                    { value: 'Otro', label: 'Otro' },
-                  ]}
-                  placeholder="Selecciona..."
-                />
-                <TextInput
+                    name="tipo_tentacion"
+                    register={register}
+                    required
+                    options={[
+                    ...pecados.map((p) => ({ value: p, label: p })),
+                      { value: 'Otro', label: 'Otro' },
+                    ]}
+                    placeholder="Selecciona..."
+                  />
+                <Select
                   label="Trigger"
-                  name="trigger"
+                  name="trigger_option"
+                  register={register}
+                  options={[
+                    ...triggersRef.map((t) => ({ value: t.nombre, label: t.nombre })),
+                    { value: 'otro', label: 'Otro' },
+                  ]}
                   placeholder="¿Qué la desencadenó?"
-                  register={register}
                 />
-                <Slider
-                  label="Intensidad"
-                  name="intensidad"
-                  register={register}
-                  min={1}
+                {triggerOption === 'otro' && (
+                  <TextInput
+                    label="Trigger personalizado"
+                    name="trigger_custom"
+                    placeholder="Describe el detonante"
+                    register={register}
+                  />
+                )}
+                  <Slider
+                    label="Intensidad"
+                    name="intensidad"
+                    register={register}
+                    min={1}
                   max={5}
                   value={watch('intensidad')}
-                  onChange={(e) => setValue('intensidad', parseInt(e.target.value))}
-                />
+                    onChange={(e) => setValue('intensidad', parseInt(e.target.value))}
+                  />
                 <TextInput
                   label="Contexto"
                   name="contexto"
                   placeholder="¿Dónde estabas? ¿Qué hacías?"
                   register={register}
                 />
-                <TextInput
-                  label="Acción de autocontrol"
-                  name="accion_autocontrol"
-                  placeholder="¿Qué hiciste?"
+                <Select
+                  label="Categoría / contexto"
+                  name="categoria_tentacion"
                   register={register}
+                  options={[
+                    ...categorias.map((c) => ({ value: c, label: c })),
+                    { value: 'Otro', label: 'Otro' },
+                  ]}
+                  placeholder="¿Qué tipo de tentación fue?"
                 />
+                  <TextInput
+                    label="Acción de autocontrol"
+                    name="accion_autocontrol"
+                    placeholder="¿Qué hiciste?"
+                    register={register}
+                  />
                 <Toggle
                   label="¿Ganaste?"
                   name="gano_tentacion"
                   register={register}
                 />
               </div>
-            )}
+              )}
           </FormBlock>
 
-          <SubmitButton label="Guardar Tarde" isLoading={isLoading} />
-        </form>
+            <SubmitButton label="Guardar Tarde" isLoading={isLoading} />
+          </form>
       </div>
     </div>
   )

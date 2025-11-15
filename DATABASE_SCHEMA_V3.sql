@@ -425,6 +425,90 @@ GRANT SELECT ON v_fact_registros_diarios TO authenticated;
 ALTER VIEW v_fact_registros_diarios SET (security_invoker = true);
 
 -- =====================================================
+-- PARTE 13B: DASHBOARD SNAPSHOT VIEW
+-- =====================================================
+
+DROP VIEW IF EXISTS v_dashboard_today;
+
+CREATE VIEW v_dashboard_today AS
+WITH emociones AS (
+  SELECT
+    f.fact_id,
+    CASE 
+      WHEN ((CASE WHEN em_m.ansiedad IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN em_t.ansiedad IS NOT NULL THEN 1 ELSE 0 END)) > 0
+        THEN ROUND(
+          ((COALESCE(em_m.ansiedad, 0) + COALESCE(em_t.ansiedad, 0))::numeric) /
+          NULLIF(
+            (CASE WHEN em_m.ansiedad IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN em_t.ansiedad IS NOT NULL THEN 1 ELSE 0 END),
+            0
+          )
+        , 1)
+      ELSE NULL
+    END AS ansiedad_promedio,
+    CASE 
+      WHEN ((CASE WHEN em_m.enfoque IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN em_t.enfoque IS NOT NULL THEN 1 ELSE 0 END)) > 0
+        THEN ROUND(
+          ((COALESCE(em_m.enfoque, 0) + COALESCE(em_t.enfoque, 0))::numeric) /
+          NULLIF(
+            (CASE WHEN em_m.enfoque IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN em_t.enfoque IS NOT NULL THEN 1 ELSE 0 END),
+            0
+          )
+        , 1)
+      ELSE NULL
+    END AS enfoque_promedio,
+    CASE 
+      WHEN ((CASE WHEN em_m.estabilidad_emocional IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN em_t.estabilidad_emocional IS NOT NULL THEN 1 ELSE 0 END)) > 0
+        THEN ROUND(
+          ((COALESCE(em_m.estabilidad_emocional, 0) + COALESCE(em_t.estabilidad_emocional, 0))::numeric) /
+          NULLIF(
+            (CASE WHEN em_m.estabilidad_emocional IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN em_t.estabilidad_emocional IS NOT NULL THEN 1 ELSE 0 END),
+            0
+          )
+        , 1)
+      ELSE NULL
+    END AS estabilidad_promedio
+  FROM fact_habitos_diarios f
+  LEFT JOIN dim_estado_emocional em_m ON em_m.estado_emocional_key = f.estado_emocional_manana_key
+  LEFT JOIN dim_estado_emocional em_t ON em_t.estado_emocional_key = f.estado_emocional_tarde_key
+)
+SELECT
+  f.fact_id,
+  f.user_id,
+  f.date_key,
+  f.sueno_horas,
+  f.calidad_sueno,
+  f.rutina_manana_score,
+  f.rutina_noche_score,
+  f.energia_diaria,
+  f.identidad_dia,
+  emociones.ansiedad_promedio,
+  emociones.enfoque_promedio,
+  emociones.estabilidad_promedio,
+  EXISTS (SELECT 1 FROM fact_ejercicios fe WHERE fe.fact_id = f.fact_id) AS ejercicio_realizado,
+  EXISTS (SELECT 1 FROM fact_estudios fs WHERE fs.fact_id = f.fact_id) AS estudio_realizado,
+  EXISTS (SELECT 1 FROM fact_tentaciones ft WHERE ft.fact_id = f.fact_id) AS tentacion_registrada,
+  EXISTS (
+    SELECT 1
+    FROM fact_practicas_espirituales fp
+    JOIN dim_espiritual de ON de.espiritualidad_key = fp.espiritualidad_key
+    WHERE fp.fact_id = f.fact_id
+      AND de.practica IN ('Oracion', 'Devocional', 'Reflexion')
+  ) AS oracion_realizada,
+  EXISTS (
+    SELECT 1
+    FROM fact_practicas_espirituales fp
+    JOIN dim_espiritual de ON de.espiritualidad_key = fp.espiritualidad_key
+    WHERE fp.fact_id = f.fact_id
+      AND de.practica = 'Lectura'
+  ) AS lectura_realizada
+FROM fact_habitos_diarios f
+LEFT JOIN emociones ON emociones.fact_id = f.fact_id
+WHERE f.is_deleted = false;
+
+GRANT SELECT ON v_dashboard_today TO authenticated;
+ALTER VIEW v_dashboard_today SET (security_invoker = true);
+
+-- =====================================================
 -- PARTE 14: ÍNDICES DE PERFORMANCE
 -- =====================================================
 

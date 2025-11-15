@@ -73,7 +73,7 @@ export default function EstudioPage() {
         .insert({ fact_id: factId, estudio_key: estudioId, orden: 1 })
       
       // Also update fact for backwards compatibility
-      await updateFact(factId, { estudio_key: estudioId })
+      await updateFact(factId, { estudio_key: estudioId }, user.id)
 
       router.push('/dashboard?success=estudio')
     } catch (error) {

@@ -17,6 +17,7 @@ import {
   AcademicCapIcon,
   FireIcon,
   PencilSquareIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline'
 
 export default function DashboardPage() {
@@ -50,7 +51,7 @@ export default function DashboardPage() {
     try {
       const today = new Date().toISOString().split('T')[0]
       const { data, error } = await supabase
-        .from('fact_habitos_diarios')
+        .from('v_dashboard_today')
         .select('*')
         .eq('user_id', userId)
         .eq('date_key', today)
@@ -154,6 +155,13 @@ export default function DashboardPage() {
       href: '/dia',
       color: 'gray',
     },
+    {
+      title: 'Dashboard BI',
+      description: 'Analiza métricas y tendencias',
+      icon: ChartBarIcon,
+      href: '/analytics',
+      color: 'gray',
+    },
   ]
 
   return (
@@ -223,7 +231,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <StatCard
                 label="Sueño"
-                value={todayData.sueno_horas ? `${todayData.sueno_horas}h` : '—'}
+                value={todayData.sueno_horas ? `${Number(todayData.sueno_horas).toFixed(1)}h` : '—'}
                 color="blue"
               />
               <StatCard
@@ -232,24 +240,53 @@ export default function DashboardPage() {
                 color="blue"
               />
               <StatCard
+                label="Rutina AM"
+                value={
+                  typeof todayData.rutina_manana_score === 'number'
+                    ? `${todayData.rutina_manana_score}%`
+                    : '—'
+                }
+                color="indigo"
+              />
+              <StatCard
                 label="Energía"
                 value={todayData.energia_diaria ? `${todayData.energia_diaria}/5` : '—'}
                 color="green"
               />
               <StatCard
                 label="Ansiedad"
-                value={todayData.ansiedad ? `${todayData.ansiedad}/5` : '—'}
+                value={todayData.ansiedad_promedio ? `${todayData.ansiedad_promedio}/5` : '—'}
                 color="amber"
               />
               <StatCard
                 label="Enfoque"
-                value={todayData.enfoque ? `${todayData.enfoque}/5` : '—'}
+                value={todayData.enfoque_promedio ? `${todayData.enfoque_promedio}/5` : '—'}
                 color="purple"
               />
               <StatCard
                 label="Ejercicio"
-                value={todayData.ejercicio_key ? 'Sí' : 'No'}
-                color={todayData.ejercicio_key ? 'green' : 'gray'}
+                value={todayData.ejercicio_realizado ? 'Sí' : 'No'}
+                color={todayData.ejercicio_realizado ? 'green' : 'gray'}
+              />
+              <StatCard
+                label="Estudio"
+                value={todayData.estudio_realizado ? 'Sí' : 'No'}
+                color={todayData.estudio_realizado ? 'green' : 'gray'}
+              />
+              <StatCard
+                label="Lectura"
+                value={todayData.lectura_realizada ? 'Sí' : 'No'}
+                color={todayData.lectura_realizada ? 'green' : 'gray'}
+              />
+              <StatCard
+                label="Oración"
+                value={todayData.oracion_realizada ? 'Sí' : 'No'}
+                color={todayData.oracion_realizada ? 'green' : 'gray'}
+              />
+              <StatCard
+                label="Tentación"
+                value={todayData.tentacion_registrada ? 'Sí' : 'No'}
+                color={todayData.tentacion_registrada ? 'red' : 'gray'}
               />
             </div>
           ) : (

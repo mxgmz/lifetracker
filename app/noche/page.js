@@ -97,7 +97,7 @@ export default function NochePage() {
               date_key: today,
               orden: i + 1,
               descripcion: gratitudesData[i],
-            })
+      })
             gratitudesToLink.push({ gratitud_key: gratitudKey, orden: i + 1 })
           }
         }
@@ -150,6 +150,8 @@ export default function NochePage() {
           intensidad: data.interaccion_positiva_intensidad ? parseInt(data.interaccion_positiva_intensidad) : null,
           descripcion: data.interaccion_positiva_desc,
           emocion_predominante: data.interaccion_positiva_emocion || null,
+          hora_inicio: data.interaccion_positiva_hora || null,
+          duracion_minutos: data.interaccion_positiva_duracion ? parseInt(data.interaccion_positiva_duracion) : null,
         })
         interaccionesToLink.push({ interaccion_key: interaccionPositivaKey })
       }
@@ -162,11 +164,13 @@ export default function NochePage() {
           intensidad: data.interaccion_negativa_intensidad ? parseInt(data.interaccion_negativa_intensidad) : null,
           descripcion: data.interaccion_negativa_desc,
           emocion_predominante: data.interaccion_negativa_emocion || null,
+          hora_inicio: data.interaccion_negativa_hora || null,
+          duracion_minutos: data.interaccion_negativa_duracion ? parseInt(data.interaccion_negativa_duracion) : null,
         })
         interaccionesToLink.push({ interaccion_key: interaccionNegativaKey })
       }
 
-      await updateFact(factId, updates)
+      await updateFact(factId, updates, user.id)
 
       if (gratitudesToLink.length) {
         const { count: gratCount, error: gratCountError } = await supabase
@@ -265,7 +269,7 @@ export default function NochePage() {
           reference="Salmos 4:8"
         />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Block 1: Rutina Nocturna */}
           <FormBlock title="Rutina Nocturna" icon={ClipboardDocumentCheckIcon}>
             <div className="grid grid-cols-2 gap-4">
@@ -401,14 +405,30 @@ export default function NochePage() {
                 <Select
                   label="Emoción predominante (positiva)"
                   name="interaccion_positiva_emocion"
-                  register={register}
-                  options={[
+                register={register}
+                options={[
                     { value: 'Gozo', label: 'Gozo' },
                     { value: 'Calma', label: 'Calma' },
                     { value: 'Inspiracion', label: 'Inspiración' },
                     { value: 'Agradecimiento', label: 'Agradecimiento' },
-                  ]}
-                  placeholder="Selecciona..."
+                ]}
+                placeholder="Selecciona..."
+              />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <TextInput
+                  label="Hora (positiva)"
+                  name="interaccion_positiva_hora"
+                  type="time"
+                  register={register}
+                />
+                <TextInput
+                  label="Duración (min)"
+                  name="interaccion_positiva_duracion"
+                  type="number"
+                  step="5"
+                  placeholder="Ej: 15"
+                  register={register}
                 />
               </div>
               <TextInput
@@ -439,6 +459,22 @@ export default function NochePage() {
                     { value: 'Ira', label: 'Ira' },
                   ]}
                   placeholder="Selecciona..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <TextInput
+                  label="Hora (negativa)"
+                  name="interaccion_negativa_hora"
+                  type="time"
+                  register={register}
+                />
+                <TextInput
+                  label="Duración (min)"
+                  name="interaccion_negativa_duracion"
+                  type="number"
+                  step="5"
+                  placeholder="Ej: 10"
+                  register={register}
                 />
               </div>
             </div>
@@ -560,17 +596,17 @@ export default function NochePage() {
 
           {/* Block 9: Notas del Día */}
           <FormBlock title="Notas del Día" icon={DocumentTextIcon}>
-            <TextInput
+              <TextInput
               label="Notas adicionales"
-              name="notas_dia"
+                name="notas_dia"
               rows={6}
               placeholder="Escribe cualquier reflexión adicional del día..."
-              register={register}
-            />
+                register={register}
+              />
           </FormBlock>
 
-          <SubmitButton label="Guardar Noche" isLoading={isLoading} />
-        </form>
+            <SubmitButton label="Guardar Noche" isLoading={isLoading} />
+          </form>
       </div>
     </div>
   )

@@ -93,6 +93,7 @@ export default function MananaPage() {
           practica: 'Devocional',
           libro_biblia: data.libro_biblia || null,
           capitulo: data.capitulo ? parseInt(data.capitulo) : null,
+          tiempo_min: data.tiempo_devocional ? parseInt(data.tiempo_devocional) : null,
           insight_espiritual: data.insight_espiritual_manana || null,
         })
       }
@@ -174,7 +175,7 @@ export default function MananaPage() {
       if (data.ejercicio_tipo) {
         // Si es descanso o no hacer ejercicio, registrar en dim_ejercicio con razón
         if (data.ejercicio_tipo === 'Descanso' || data.ejercicio_tipo === 'No haré ejercicio') {
-          const ejercicioId = await upsertDimension('dim_ejercicio', {
+        const ejercicioId = await upsertDimension('dim_ejercicio', {
             user_id: user.id,
             momento_dia: 'Manana',
             tipo: data.ejercicio_tipo,
@@ -186,16 +187,17 @@ export default function MananaPage() {
           const planId = await upsertDimension('dim_ejercicio_planeado', {
             user_id: user.id,
             date_key: today,
-            tipo: data.ejercicio_tipo,
+          tipo: data.ejercicio_tipo,
             grupo_muscular: data.grupo_muscular || null,
+            duracion_estimada_min: data.ejercicio_duracion_estimada ? parseInt(data.ejercicio_duracion_estimada) : null,
             distancia_km_planeada: data.ejercicio_km ? parseFloat(data.ejercicio_km) : null,
             notas: data.ejercicio_otro || null,
-          })
+        })
           updates.ejercicio_plan_key = planId
         }
       }
 
-      await updateFact(factId, updates)
+      await updateFact(factId, updates, user.id)
 
       if (espiritualidadId) {
         const { count, error: practCountError } = await supabase
@@ -257,28 +259,28 @@ export default function MananaPage() {
           reference="Salmos 118:24"
         />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Block 1: Sueño (Cuerpo) */}
           <FormBlock title="Sueño (Cuerpo)" icon={SunIcon}>
-            <Slider
-              label="Horas de sueño"
-              name="sleep_hours"
-              register={register}
-              min={0}
-              max={12}
-              step={0.5}
-              value={watch('sleep_hours')}
-              onChange={(e) => setValue('sleep_hours', parseFloat(e.target.value))}
-            />
-            <Slider
-              label="Calidad del sueño"
-              name="sleep_quality"
-              register={register}
-              min={1}
+              <Slider
+                label="Horas de sueño"
+                name="sleep_hours"
+                register={register}
+                min={0}
+                max={12}
+                step={0.5}
+                value={watch('sleep_hours')}
+                onChange={(e) => setValue('sleep_hours', parseFloat(e.target.value))}
+              />
+              <Slider
+                label="Calidad del sueño"
+                name="sleep_quality"
+                register={register}
+                min={1}
               max={5}
-              value={watch('sleep_quality')}
-              onChange={(e) => setValue('sleep_quality', parseInt(e.target.value))}
-            />
+                value={watch('sleep_quality')}
+                onChange={(e) => setValue('sleep_quality', parseInt(e.target.value))}
+              />
           </FormBlock>
 
           {/* Block 2: Estado Mental (Mente) */}
@@ -380,6 +382,14 @@ export default function MananaPage() {
               register={register}
             />
             <TextInput
+              label="Tiempo dedicado (min)"
+              name="tiempo_devocional"
+              type="number"
+              step="1"
+              placeholder="Ej: 15"
+              register={register}
+            />
+            <TextInput
               label="Insight espiritual de la mañana"
               name="insight_espiritual_manana"
               rows={3}
@@ -436,13 +446,13 @@ export default function MananaPage() {
 
           {/* Block 5: Ejercicio Planeado */}
           <FormBlock title="Ejercicio Planeado" icon={FireIcon}>
-            <Select
-              label="Tipo de ejercicio"
-              name="ejercicio_tipo"
-              register={register}
-              options={[
-                { value: 'Pesas', label: 'Pesas' },
-                { value: 'Correr', label: 'Correr' },
+              <Select
+                label="Tipo de ejercicio"
+                name="ejercicio_tipo"
+                register={register}
+                options={[
+                  { value: 'Pesas', label: 'Pesas' },
+                  { value: 'Correr', label: 'Correr' },
                 { value: 'Descanso', label: 'Descanso planeado' },
                 { value: 'No haré ejercicio', label: 'No haré ejercicio' },
                 { value: 'Otro', label: 'Otro' },
@@ -483,11 +493,11 @@ export default function MananaPage() {
                 placeholder="Selecciona..."
               />
             )}
-            {ejercicioTipo === 'Correr' && (
-              <TextInput
+              {ejercicioTipo === 'Correr' && (
+                <TextInput
                 label="Kilómetros planeados"
-                name="ejercicio_km"
-                type="number"
+                  name="ejercicio_km"
+                  type="number"
                 step="0.1"
                 placeholder="Ej: 5.0"
                 register={register}
@@ -498,6 +508,16 @@ export default function MananaPage() {
                 label="Descripción"
                 name="ejercicio_otro"
                 placeholder="Describe el ejercicio..."
+                  register={register}
+                />
+              )}
+            {ejercicioTipo && ejercicioTipo !== 'Descanso' && ejercicioTipo !== 'No haré ejercicio' && (
+              <TextInput
+                label="Duración estimada (min)"
+                name="ejercicio_duracion_estimada"
+                type="number"
+                step="5"
+                placeholder="Ej: 45"
                 register={register}
               />
             )}
@@ -564,8 +584,8 @@ export default function MananaPage() {
             )}
           </FormBlock>
 
-          <SubmitButton label="Guardar Mañana" isLoading={isLoading} />
-        </form>
+            <SubmitButton label="Guardar Mañana" isLoading={isLoading} />
+          </form>
       </div>
     </div>
   )

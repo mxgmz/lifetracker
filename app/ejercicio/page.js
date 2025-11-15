@@ -108,7 +108,7 @@ export default function EjercicioPage() {
         .insert({ fact_id: factId, ejercicio_key: ejercicioId, orden: (ejercicioCount || 0) + 1 })
       
       // Also update fact for backwards compatibility
-      await updateFact(factId, { ejercicio_key: ejercicioId })
+      await updateFact(factId, { ejercicio_key: ejercicioId }, user.id)
 
       router.push('/dashboard?success=ejercicio')
     } catch (error) {
