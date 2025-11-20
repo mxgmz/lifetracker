@@ -7,13 +7,13 @@ export default function MetricCard({
   color = 'blue',
 }) {
   const colorMap = {
-    blue: 'text-blue-600 bg-blue-50',
-    green: 'text-green-600 bg-green-50',
-    amber: 'text-amber-600 bg-amber-50',
-    purple: 'text-purple-600 bg-purple-50',
-    rose: 'text-rose-600 bg-rose-50',
-    gray: 'text-gray-600 bg-gray-100',
-    indigo: 'text-indigo-600 bg-indigo-50',
+    blue: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    green: 'text-green-400 bg-green-500/10 border-green-500/20',
+    amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+    purple: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+    rose: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+    gray: 'text-gray-400 bg-gray-500/10 border-gray-500/20',
+    indigo: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
   }
 
   const badgeColor = colorMap[color] || colorMap.blue
@@ -23,23 +23,27 @@ export default function MetricCard({
       : null
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{title}</p>
+    <div className="glass-card p-5 flex flex-col justify-between h-full group hover:bg-white/10 transition-all">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-medium text-white/50 uppercase tracking-wider group-hover:text-white/70 transition-colors">{title}</p>
         {deltaValue && (
           <span
-            className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${badgeColor}`}
+            className={`inline-flex items-center text-[10px] font-bold px-2 py-1 rounded-full border ${badgeColor}`}
           >
             {deltaValue}
           </span>
         )}
       </div>
-      <div className="text-3xl font-semibold text-gray-900">{value ?? '—'}</div>
-      <p className="text-xs text-gray-500 mt-1">{description}</p>
+      <div>
+        <div className="text-3xl font-display font-bold text-white mb-1">{value ?? '—'}</div>
+        <p className="text-xs text-white/40">{description}</p>
+      </div>
       {deltaValue && (
-        <p className="text-[11px] text-gray-400 mt-1">
-          {trendLabel} • {delta > 0 ? 'Mejoró' : delta < 0 ? 'Descendió' : 'Sin cambio'}
-        </p>
+        <div className="mt-3 pt-3 border-t border-white/5">
+          <p className="text-[10px] text-white/30">
+            {trendLabel} • <span className={delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-white/30'}>{delta > 0 ? 'Mejoró' : delta < 0 ? 'Descendió' : 'Sin cambio'}</span>
+          </p>
+        </div>
       )}
     </div>
   )

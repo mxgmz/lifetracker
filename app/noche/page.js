@@ -7,606 +7,367 @@ import { supabase } from '@/lib/supabaseClient'
 import { getOrCreateFact } from '@/lib/getOrCreateFact'
 import { updateFact } from '@/lib/updateFact'
 import { upsertDimension } from '@/lib/upsertDimension'
-import PageHeader from '@/components/PageHeader'
-import FormBlock from '@/components/FormBlock'
-import Slider from '@/components/Slider'
-import Toggle from '@/components/Toggle'
-import Select from '@/components/Select'
-import TextInput from '@/components/TextInput'
-import SubmitButton from '@/components/SubmitButton'
-import { ArrowLeftIcon, ClipboardDocumentCheckIcon, HomeIcon, UserGroupIcon, SparklesIcon, HeartIcon, FlagIcon, DocumentTextIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  ArrowLeftIcon,
+  MoonIcon,
+  ClipboardDocumentCheckIcon,
+  HomeIcon,
+  HeartIcon,
+  SparklesIcon,
+  FlagIcon,
+  CheckCircleIcon,
+  ChevronRightIcon
+} from '@heroicons/react/24/outline'
+
+// --- Components for Steps ---
+
+const StepIntro = ({ user, onNext }) => (
+  <div className="flex flex-col items-center justify-center space-y-8 text-center h-full">
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="p-4 rounded-full bg-indigo-500/10 border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.2)]"
+    >
+      <MoonIcon className="w-12 h-12 text-indigo-400" />
+    </motion.div>
+    <div className="space-y-2">
+      <h1 className="text-4xl font-display font-bold text-white">
+        Buenas noches, {user?.email?.split('@')[0] || 'Guerrero'}
+      </h1>
+      <p className="text-xl text-white/50 font-light">
+        "En paz me acostaré y asimismo dormiré; porque solo tú, Jehová, me haces vivir confiado"
+      </p>
+    </div>
+
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onNext}
+      className="mt-8 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-900/30 transition-all flex items-center"
+    >
+      Cerrar el Día <ChevronRightIcon className="w-5 h-5 ml-2" />
+    </motion.button>
+  </div>
+)
+
+const StepReview = ({ priorities, togglePriority }) => {
+  return (
+    <div className="space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-display font-bold text-white">Revisión de Misión</h2>
+        <p className="text-white/50">¿Cumpliste tus objetivos de hoy?</p>
+      </div>
+
+      <div className="glass-panel p-6 space-y-4">
+        {priorities.length === 0 ? (
+          <p className="text-center text-white/30 italic">No definiste prioridades hoy.</p>
+        ) : (
+          priorities.map((p) => (
+            <button
+              key={p.meta_key}
+              onClick={() => togglePriority(p.meta_key)}
+              className={`w-full p-4 rounded-xl border transition-all flex items-center justify-between group ${p.cumplida
+                  ? 'bg-green-500/20 border-green-500/50'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+            >
+              <span className={`text-lg font-medium ${p.cumplida ? 'text-green-300 line-through' : 'text-white'}`}>
+                {p.descripcion}
+              </span>
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${p.cumplida
+                  ? 'border-green-400 bg-green-400 text-black'
+                  : 'border-white/30 group-hover:border-white/50'
+                }`}>
+                {p.cumplida && <CheckCircleIcon className="w-4 h-4" />}
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+const StepHabits = ({ register, watch, setValue }) => {
+  const habits = [
+    { name: 'oracion', label: 'Oración', icon: SparklesIcon },
+    { name: 'planeacion', label: 'Planeación Mañana', icon: FlagIcon },
+    { name: 'cierre_redes', label: 'Cierre de Redes', icon: ClipboardDocumentCheckIcon },
+    { name: 'ropa_lista', label: 'Ropa Lista', icon: HomeIcon },
+    { name: 'orden_minimo', label: 'Orden Mínimo', icon: CheckCircleIcon },
+  ]
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-display font-bold text-white">Rituales Nocturnos</h2>
+        <p className="text-white/50">Prepara el terreno para mañana</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        {habits.map((h) => {
+          const isActive = watch(h.name)
+          return (
+            <button
+              key={h.name}
+              type="button"
+              onClick={() => setValue(h.name, !isActive)}
+              className={`p-4 rounded-xl border transition-all flex items-center space-x-4 ${isActive ? 'bg-indigo-500/20 border-indigo-500/50' : 'bg-white/5 border-white/10'
+                }`}
+            >
+              <div className={`p-2 rounded-full ${isActive ? 'bg-indigo-500 text-white' : 'bg-white/10 text-white/30'}`}>
+                <h.icon className="w-6 h-6" />
+              </div>
+              <span className={`font-medium text-lg ${isActive ? 'text-white' : 'text-white/50'}`}>
+                {h.label}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const StepGratitude = ({ register }) => {
+  return (
+    <div className="space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-display font-bold text-white">Gratitud & Identidad</h2>
+        <p className="text-white/50">Reconoce lo bueno y quién fuiste hoy</p>
+      </div>
+
+      <div className="space-y-6">
+        <div className="glass-panel p-6 space-y-4">
+          <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-4">3 Gratitudes</h3>
+          <input
+            {...register('gratitud_1')}
+            placeholder="1. Hoy agradezco por..."
+            className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-white/30 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+          />
+          <input
+            {...register('gratitud_2')}
+            placeholder="2. Hoy agradezco por..."
+            className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-white/30 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+          />
+          <input
+            {...register('gratitud_3')}
+            placeholder="3. Hoy agradezco por..."
+            className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-white/30 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+          />
+        </div>
+
+        <div className="glass-panel p-6">
+          <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-4">Identidad</h3>
+          <textarea
+            {...register('quien_fuiste')}
+            rows={3}
+            placeholder="¿Quién fuiste hoy? (Ej: Un líder paciente, un creador enfocado...)"
+            className="w-full bg-transparent text-white placeholder-white/30 focus:outline-none resize-none"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// --- Main Page Component ---
 
 export default function NochePage() {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [step, setStep] = useState(0)
+  const [priorities, setPriorities] = useState([])
   const router = useRouter()
+
   const { register, handleSubmit, watch, setValue } = useForm({
     defaultValues: {
-      orden_cuarto: 3,
-      orden_escritorio: 3,
-      orden_mochila: 3,
-      ruido_ambiental: 3,
-      limpieza_personal: 3,
-      identidad_dia: 3,
-      estabilidad_emocional: 3,
-      interaccion_positiva_intensidad: 3,
-      interaccion_negativa_intensidad: 3,
-      cumplio_meta_principal: false,
-      cumplio_meta_secundaria: false,
+      oracion: false,
+      planeacion: false,
+      cierre_redes: false,
+      ropa_lista: false,
+      orden_minimo: false,
     },
   })
 
   useEffect(() => {
-    checkUser()
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/login')
+        return
+      }
+      setUser(session.user)
+      fetchPriorities(session.user.id)
+    }
+    init()
   }, [])
 
-  const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      router.push('/login')
-    } else {
-      setUser(session.user)
-    }
+  const fetchPriorities = async (userId) => {
+    const today = new Date().toISOString().split('T')[0]
+    const { data } = await supabase
+      .from('dim_metas')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date_key', today)
+      .eq('tipo', 'Diaria')
+      .order('orden', { ascending: true })
+
+    if (data) setPriorities(data)
+  }
+
+  const togglePriority = (metaKey) => {
+    setPriorities(prev => prev.map(p =>
+      p.meta_key === metaKey ? { ...p, cumplida: !p.cumplida } : p
+    ))
   }
 
   const onSubmit = async (data) => {
     if (!user) return
-
     setIsLoading(true)
     try {
       const today = new Date().toISOString().split('T')[0]
       const factId = await getOrCreateFact(user.id, today)
 
-      // Insert dim_rutina (night)
+      // 1. Update Priorities
+      for (const p of priorities) {
+        await supabase
+          .from('dim_metas')
+          .update({ cumplida: p.cumplida })
+          .eq('meta_key', p.meta_key)
+      }
+
+      // 2. Night Routine
       const rutinaNightId = await upsertDimension('dim_rutina', {
         user_id: user.id,
         tipo_rutina: 'Noche',
-        oracion: data.oracion || false,
-        planeacion: data.planeacion || false,
-        cierre_redes: data.cierre_redes || false,
-        ropa_lista: data.ropa_lista || false,
-        orden_espacio: data.orden_minimo || false,
+        oracion: data.oracion,
+        planeacion: data.planeacion,
+        cierre_redes: data.cierre_redes,
+        ropa_lista: data.ropa_lista,
+        orden_espacio: data.orden_minimo,
       })
 
-      // Insert dim_ambiente with all fields
-      let ambienteId = null
-      if (data.orden_cuarto || data.orden_escritorio || data.orden_mochila || data.ruido_ambiental || data.limpieza_personal || data.sensacion_espacial) {
-        ambienteId = await upsertDimension('dim_ambiente', {
-          user_id: user.id,
-          orden_cuarto: data.orden_cuarto ? parseInt(data.orden_cuarto) : null,
-          orden_escritorio: data.orden_escritorio ? parseInt(data.orden_escritorio) : null,
-          orden_mochila: data.orden_mochila ? parseInt(data.orden_mochila) : null,
-          ruido_ambiental: data.ruido_ambiental ? parseInt(data.ruido_ambiental) : null,
-          limpieza_personal: data.limpieza_personal ? parseInt(data.limpieza_personal) : null,
-          sensacion_espacial: data.sensacion_espacial || null,
-        })
-      }
-
-      // Save gratitudes
+      // 3. Gratitudes
+      const gratitudesData = [data.gratitud_1, data.gratitud_2, data.gratitud_3].filter(Boolean)
       const gratitudesToLink = []
-      if (data.gratitud_1 || data.gratitud_2 || data.gratitud_3) {
-        const gratitudesData = [
-          data.gratitud_1 || null,
-          data.gratitud_2 || null,
-          data.gratitud_3 || null,
-        ]
-        for (let i = 0; i < gratitudesData.length; i++) {
-          if (gratitudesData[i]) {
-            const gratitudKey = await upsertDimension('dim_gratitud', {
-              user_id: user.id,
-              date_key: today,
-              orden: i + 1,
-              descripcion: gratitudesData[i],
-      })
-            gratitudesToLink.push({ gratitud_key: gratitudKey, orden: i + 1 })
-          }
-        }
+
+      for (let i = 0; i < gratitudesData.length; i++) {
+        const gratitudKey = await upsertDimension('dim_gratitud', {
+          user_id: user.id,
+          date_key: today,
+          orden: i + 1,
+          descripcion: gratitudesData[i],
+        })
+        gratitudesToLink.push({ gratitud_key: gratitudKey, orden: i + 1 })
       }
 
-      const updates = {
+      // 4. Fact Update
+      await updateFact(factId, {
         rutina_noche_key: rutinaNightId,
         hora_registro_noche: new Date().toISOString(),
-        interacciones_pos: data.interacciones_pos ? parseInt(data.interacciones_pos) : null,
-        interacciones_neg: data.interacciones_neg ? parseInt(data.interacciones_neg) : null,
-        identidad_dia: data.identidad_dia ? parseInt(data.identidad_dia) : null,
-        estabilidad_emocional: data.estabilidad_emocional ? parseInt(data.estabilidad_emocional) : null,
-        desvio_mayor: data.desvio_mayor || false,
-        causa_desvio: data.causa_desvio || null,
-        accion_recovery: data.accion_recovery || null,
-        notas_dia: data.notas_dia || null,
         quien_fuiste_hoy: data.quien_fuiste || null,
-      }
+      }, user.id)
 
-      if (ambienteId) {
-        updates.ambiente_key = ambienteId
-      }
-
-      // Handle spiritual insight + momento_dia
-      if (data.insight_espiritual) {
-        const espiritualidadId = await upsertDimension('dim_espiritual', {
-          user_id: user.id,
-          momento_dia: 'Noche',
-          practica: 'Reflexion',
-          insight_espiritual: data.insight_espiritual,
-        })
-        updates.espiritualidad_key = espiritualidadId
-
-        await supabase
-          .from('fact_practicas_espirituales')
-          .insert({
-            fact_id: factId,
-            espiritualidad_key: espiritualidadId,
-            momento_dia: 'Noche',
-          })
-      }
-
-      // Detailed interactions
-      const interaccionesToLink = []
-      if (data.interaccion_positiva_desc) {
-        const interaccionPositivaKey = await upsertDimension('dim_interacciones', {
-          user_id: user.id,
-          momento_dia: 'Noche',
-          tipo_interaccion: 'Positiva',
-          intensidad: data.interaccion_positiva_intensidad ? parseInt(data.interaccion_positiva_intensidad) : null,
-          descripcion: data.interaccion_positiva_desc,
-          emocion_predominante: data.interaccion_positiva_emocion || null,
-          hora_inicio: data.interaccion_positiva_hora || null,
-          duracion_minutos: data.interaccion_positiva_duracion ? parseInt(data.interaccion_positiva_duracion) : null,
-        })
-        interaccionesToLink.push({ interaccion_key: interaccionPositivaKey })
-      }
-
-      if (data.interaccion_negativa_desc) {
-        const interaccionNegativaKey = await upsertDimension('dim_interacciones', {
-          user_id: user.id,
-          momento_dia: 'Noche',
-          tipo_interaccion: 'Negativa',
-          intensidad: data.interaccion_negativa_intensidad ? parseInt(data.interaccion_negativa_intensidad) : null,
-          descripcion: data.interaccion_negativa_desc,
-          emocion_predominante: data.interaccion_negativa_emocion || null,
-          hora_inicio: data.interaccion_negativa_hora || null,
-          duracion_minutos: data.interaccion_negativa_duracion ? parseInt(data.interaccion_negativa_duracion) : null,
-        })
-        interaccionesToLink.push({ interaccion_key: interaccionNegativaKey })
-      }
-
-      await updateFact(factId, updates, user.id)
-
+      // Link Gratitudes
       if (gratitudesToLink.length) {
-        const { count: gratCount, error: gratCountError } = await supabase
+        const { count: gratCount } = await supabase
           .from('fact_gratitudes')
           .select('*', { count: 'exact', head: true })
           .eq('fact_id', factId)
-        if (gratCountError) throw new Error(`Failed to count fact_gratitudes: ${gratCountError.message}`)
 
-        await supabase
-          .from('fact_gratitudes')
-          .insert(
-            gratitudesToLink.map((gr, idx) => ({
-              fact_id: factId,
-              gratitud_key: gr.gratitud_key,
-              orden: (gratCount || 0) + idx + 1,
-            }))
-          )
-      }
-
-      if (interaccionesToLink.length) {
-        const { count: interCount, error: interCountError } = await supabase
-          .from('fact_interacciones')
-          .select('*', { count: 'exact', head: true })
-          .eq('fact_id', factId)
-        if (interCountError) {
-          throw new Error(`Failed to count fact_interacciones: ${interCountError.message}`)
-        }
-
-        await supabase
-          .from('fact_interacciones')
-          .insert(
-            interaccionesToLink.map((inter, idx) => ({
-              fact_id: factId,
-              interaccion_key: inter.interaccion_key,
-              orden: (interCount || 0) + idx + 1,
-            }))
-          )
-      }
-
-      // Update metas completion status
-      const metasCumplidas = [
-        { tipo: 'Diaria', cumplida: data.cumplio_meta_principal },
-        { tipo: 'Secundaria', cumplida: data.cumplio_meta_secundaria },
-      ]
-      const metasToUpdate = metasCumplidas.filter((meta) => typeof meta.cumplida === 'boolean')
-
-      if (metasToUpdate.length) {
-        const { data: metasDia, error: metasError } = await supabase
-          .from('dim_metas')
-          .select('meta_key, tipo')
-          .eq('user_id', user.id)
-          .eq('date_key', today)
-        if (!metasError && metasDia?.length) {
-          await Promise.all(
-            metasToUpdate.map(async (metaUpdate) => {
-              const meta = metasDia.find((m) => m.tipo === metaUpdate.tipo)
-              if (meta) {
-                await supabase
-                  .from('dim_metas')
-                  .update({ cumplida: metaUpdate.cumplida })
-                  .eq('meta_key', meta.meta_key)
-              }
-            })
-          )
-        }
+        await supabase.from('fact_gratitudes').insert(
+          gratitudesToLink.map((gr, idx) => ({
+            fact_id: factId,
+            gratitud_key: gr.gratitud_key,
+            orden: (gratCount || 0) + idx + 1,
+          }))
+        )
       }
 
       router.push('/dashboard?success=noche')
     } catch (error) {
-      console.error('Error submitting form:', error)
-      alert('Error al guardar: ' + error.message)
+      console.error(error)
+      alert('Error: ' + error.message)
     } finally {
       setIsLoading(false)
     }
   }
 
-  if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>
-  }
+  const steps = [
+    <StepIntro key="intro" user={user} onNext={() => setStep(1)} />,
+    <StepReview key="review" priorities={priorities} togglePriority={togglePriority} />,
+    <StepHabits key="habits" register={register} watch={watch} setValue={setValue} />,
+    <StepGratitude key="gratitude" register={register} />,
+  ]
+
+  const isLastStep = step === steps.length - 1
+
+  if (!user) return <div className="min-h-screen bg-[#050507] flex items-center justify-center text-white/50">Cargando...</div>
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-[680px] mx-auto space-y-8">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeftIcon className="w-4 h-4 mr-1" />
-          Volver
-        </button>
+    <div className="min-h-screen bg-[#050507] text-white overflow-hidden relative">
+      {/* Progress Bar */}
+      {step > 0 && (
+        <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
+          <motion.div
+            className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+            initial={{ width: 0 }}
+            animate={{ width: `${(step / (steps.length - 1)) * 100}%` }}
+          />
+        </div>
+      )}
 
-        <PageHeader 
-          title="Registro Nocturno"
-          subtitle="Cierra tu día con claridad, gratitud y honestidad."
-          scripture="En paz me acostaré y asimismo dormiré; porque solo tú, Jehová, me haces vivir confiado"
-          reference="Salmos 4:8"
-        />
+      {/* Back Button */}
+      <button
+        onClick={() => step === 0 ? router.back() : setStep(s => s - 1)}
+        className="absolute top-6 left-6 p-2 rounded-full hover:bg-white/5 text-white/50 hover:text-white transition-colors z-10"
+      >
+        <ArrowLeftIcon className="w-6 h-6" />
+      </button>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Block 1: Rutina Nocturna */}
-          <FormBlock title="Rutina Nocturna" icon={ClipboardDocumentCheckIcon}>
-            <div className="grid grid-cols-2 gap-4">
-              <Toggle
-                label="Oración"
-                name="oracion"
-                register={register}
-              />
-              <Toggle
-                label="Planeación mañana"
-                name="planeacion"
-                register={register}
-              />
-              <Toggle
-                label="Cierre de redes"
-                name="cierre_redes"
-                register={register}
-              />
-              <Toggle
-                label="Ropa lista"
-                name="ropa_lista"
-                register={register}
-              />
-              <Toggle
-                label="Orden mínimo"
-                name="orden_minimo"
-                register={register}
-              />
-            </div>
-          </FormBlock>
+      {/* Main Content Area */}
+      <div className="h-screen flex flex-col items-center justify-center p-6 max-w-lg mx-auto">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full"
+          >
+            {steps[step]}
+          </motion.div>
+        </AnimatePresence>
 
-          {/* Block 2: Ambiente Detallado */}
-          <FormBlock title="Ambiente" icon={HomeIcon}>
-            <div className="space-y-4">
-              <Slider
-                label="Orden del cuarto (1-5)"
-                name="orden_cuarto"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('orden_cuarto')}
-                onChange={(e) => setValue('orden_cuarto', parseInt(e.target.value))}
-              />
-              <Slider
-                label="Orden del escritorio (1-5)"
-                name="orden_escritorio"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('orden_escritorio')}
-                onChange={(e) => setValue('orden_escritorio', parseInt(e.target.value))}
-              />
-              <Slider
-                label="Orden de mochila/bolsa (1-5)"
-                name="orden_mochila"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('orden_mochila')}
-                onChange={(e) => setValue('orden_mochila', parseInt(e.target.value))}
-              />
-              <Slider
-                label="Nivel de ruido ambiental (1-5)"
-                name="ruido_ambiental"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('ruido_ambiental')}
-                onChange={(e) => setValue('ruido_ambiental', parseInt(e.target.value))}
-              />
-              <Slider
-                label="Limpieza personal (1-5)"
-                name="limpieza_personal"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('limpieza_personal')}
-                onChange={(e) => setValue('limpieza_personal', parseInt(e.target.value))}
-              />
-              <Select
-                label="Sensación del espacio"
-                name="sensacion_espacial"
-                register={register}
-                options={[
-                  { value: 'Amplio', label: 'Amplio' },
-                  { value: 'Cómodo', label: 'Cómodo' },
-                  { value: 'Ordenado', label: 'Ordenado' },
-                  { value: 'Caótico', label: 'Caótico' },
-                  { value: 'Claustrofóbico', label: 'Claustrofóbico' },
-                  { value: 'Neutral', label: 'Neutral' },
-                ]}
-                placeholder="Selecciona..."
-              />
-            </div>
-          </FormBlock>
-
-          {/* Block 3: Interacciones */}
-          <FormBlock title="Interacciones" icon={UserGroupIcon}>
-            <div className="grid grid-cols-2 gap-4">
-              <TextInput
-                label="Interacciones positivas"
-                name="interacciones_pos"
-                type="number"
-                placeholder="0"
-                register={register}
-              />
-              <TextInput
-                label="Interacciones negativas"
-                name="interacciones_neg"
-                type="number"
-                placeholder="0"
-                register={register}
-              />
-            </div>
-            <div className="mt-4 space-y-4">
-              <TextInput
-                label="Describe una interacción positiva"
-                name="interaccion_positiva_desc"
-                rows={2}
-                placeholder="¿Qué sucedió? ¿Con quién?"
-                register={register}
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <Slider
-                  label="Intensidad positiva (1-5)"
-                  name="interaccion_positiva_intensidad"
-                  register={register}
-                  min={1}
-                  max={5}
-                  value={watch('interaccion_positiva_intensidad')}
-                  onChange={(e) => setValue('interaccion_positiva_intensidad', parseInt(e.target.value))}
-                />
-                <Select
-                  label="Emoción predominante (positiva)"
-                  name="interaccion_positiva_emocion"
-                register={register}
-                options={[
-                    { value: 'Gozo', label: 'Gozo' },
-                    { value: 'Calma', label: 'Calma' },
-                    { value: 'Inspiracion', label: 'Inspiración' },
-                    { value: 'Agradecimiento', label: 'Agradecimiento' },
-                ]}
-                placeholder="Selecciona..."
-              />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <TextInput
-                  label="Hora (positiva)"
-                  name="interaccion_positiva_hora"
-                  type="time"
-                  register={register}
-                />
-                <TextInput
-                  label="Duración (min)"
-                  name="interaccion_positiva_duracion"
-                  type="number"
-                  step="5"
-                  placeholder="Ej: 15"
-                  register={register}
-                />
-              </div>
-              <TextInput
-                label="Describe una interacción negativa"
-                name="interaccion_negativa_desc"
-                rows={2}
-                placeholder="¿Qué pasó? ¿Cómo te sentiste?"
-                register={register}
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <Slider
-                  label="Intensidad negativa (1-5)"
-                  name="interaccion_negativa_intensidad"
-                  register={register}
-                  min={1}
-                  max={5}
-                  value={watch('interaccion_negativa_intensidad')}
-                  onChange={(e) => setValue('interaccion_negativa_intensidad', parseInt(e.target.value))}
-                />
-                <Select
-                  label="Emoción predominante (negativa)"
-                  name="interaccion_negativa_emocion"
-                  register={register}
-                  options={[
-                    { value: 'Estres', label: 'Estrés' },
-                    { value: 'Ansiedad', label: 'Ansiedad' },
-                    { value: 'Tristeza', label: 'Tristeza' },
-                    { value: 'Ira', label: 'Ira' },
-                  ]}
-                  placeholder="Selecciona..."
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <TextInput
-                  label="Hora (negativa)"
-                  name="interaccion_negativa_hora"
-                  type="time"
-                  register={register}
-                />
-                <TextInput
-                  label="Duración (min)"
-                  name="interaccion_negativa_duracion"
-                  type="number"
-                  step="5"
-                  placeholder="Ej: 10"
-                  register={register}
-                />
-              </div>
-            </div>
-          </FormBlock>
-
-          {/* Block 4: Reflexión Espiritual */}
-          <FormBlock title="Reflexión Espiritual" icon={SparklesIcon}>
-            <TextInput
-              label="Insight espiritual del día"
-              name="insight_espiritual"
-              rows={4}
-              placeholder="¿Qué aprendiste espiritualmente hoy?"
-              register={register}
-            />
-          </FormBlock>
-
-          {/* Block 5: Gratitud */}
-          <FormBlock title="Gratitud" icon={HeartIcon}>
-            <TextInput
-              label="Hoy agradezco por (1)"
-              name="gratitud_1"
-              placeholder="Primera cosa por la que estás agradecido..."
-              register={register}
-            />
-            <TextInput
-              label="Hoy agradezco por (2)"
-              name="gratitud_2"
-              placeholder="Segunda cosa..."
-              register={register}
-            />
-            <TextInput
-              label="Hoy agradezco por (3)"
-              name="gratitud_3"
-              placeholder="Tercera cosa..."
-              register={register}
-            />
-          </FormBlock>
-
-          {/* Block 6: Autoconcepto */}
-          <FormBlock title="Autoconcepto" icon={UserGroupIcon}>
-            <Slider
-              label="Identidad del día (1-5)"
-              name="identidad_dia"
-              register={register}
-              min={1}
-              max={5}
-              value={watch('identidad_dia')}
-              onChange={(e) => setValue('identidad_dia', parseInt(e.target.value))}
-            />
-            <Slider
-              label="Estabilidad emocional del día (1-5)"
-              name="estabilidad_emocional"
-              register={register}
-              min={1}
-              max={5}
-              value={watch('estabilidad_emocional')}
-              onChange={(e) => setValue('estabilidad_emocional', parseInt(e.target.value))}
-            />
-            <TextInput
-              label="¿Quién fuiste hoy?"
-              name="quien_fuiste"
-              rows={2}
-              placeholder="Describe tu identidad del día..."
-              register={register}
-            />
-          </FormBlock>
-
-          {/* Block 7b: Cumplimiento de metas */}
-          <FormBlock title="Metas del día" icon={FlagIcon}>
-            <Toggle
-              label="¿Cumpliste tu meta principal?"
-              name="cumplio_meta_principal"
-              register={register}
-            />
-            <Toggle
-              label="¿Cumpliste tu meta secundaria?"
-              name="cumplio_meta_secundaria"
-              register={register}
-            />
-          </FormBlock>
-
-          {/* Block 7: Planeación Mañana */}
-          <FormBlock title="Planeación Mañana" icon={FlagIcon}>
-            <TextInput
-              label="Meta principal de mañana"
-              name="meta_manana"
-              placeholder="¿Cuál es tu prioridad para mañana?"
-              register={register}
-            />
-          </FormBlock>
-
-          {/* Block 8: Desvíos y Recovery */}
-          <FormBlock title="Desvíos y Recovery" icon={ArrowPathIcon}>
-            <Toggle
-              label="¿Tuve un desvío mayor hoy?"
-              name="desvio_mayor"
-              description="Un momento donde te desviaste significativamente de tus valores o metas"
-              register={register}
-            />
-            {watch('desvio_mayor') && (
-              <div className="space-y-4 pt-2">
-                <TextInput
-                  label="¿Qué causó el desvío?"
-                  name="causa_desvio"
-                  rows={2}
-                  placeholder="Describe qué sucedió..."
-                  register={register}
-                />
-                <TextInput
-                  label="¿Qué acción de recovery tomaré?"
-                  name="accion_recovery"
-                  rows={2}
-                  placeholder="¿Cómo te recuperarás mañana?"
-                  register={register}
-                />
-              </div>
+        {/* Navigation Actions (only for steps > 0) */}
+        {step > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-8 w-full flex justify-end"
+          >
+            {isLastStep ? (
+              <button
+                onClick={handleSubmit(onSubmit)}
+                disabled={isLoading}
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-900/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center"
+              >
+                {isLoading ? 'Guardando...' : 'Descansar'}
+                {!isLoading && <MoonIcon className="w-5 h-5 ml-2" />}
+              </button>
+            ) : (
+              <button
+                onClick={() => setStep(s => s + 1)}
+                className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium text-white transition-all flex items-center"
+              >
+                Siguiente <ChevronRightIcon className="w-4 h-4 ml-2" />
+              </button>
             )}
-          </FormBlock>
-
-          {/* Block 9: Notas del Día */}
-          <FormBlock title="Notas del Día" icon={DocumentTextIcon}>
-              <TextInput
-              label="Notas adicionales"
-                name="notas_dia"
-              rows={6}
-              placeholder="Escribe cualquier reflexión adicional del día..."
-                register={register}
-              />
-          </FormBlock>
-
-            <SubmitButton label="Guardar Noche" isLoading={isLoading} />
-          </form>
+          </motion.div>
+        )}
       </div>
     </div>
   )

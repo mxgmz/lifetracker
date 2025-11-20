@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import Card from '@/components/Card'
-import PageTitle from '@/components/PageTitle'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import PageHeader from '@/components/PageHeader'
+import { ArrowLeftIcon, UserIcon } from '@heroicons/react/24/outline'
 
 export default function ConfiguracionPage() {
   const [user, setUser] = useState(null)
@@ -30,38 +29,49 @@ export default function ConfiguracionPage() {
   }
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#050507]">
+        <div className="text-white/50 animate-pulse font-light tracking-widest">CARGANDO...</div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#050507] text-white p-6">
+      <div className="max-w-2xl mx-auto space-y-8">
         <button
           onClick={() => router.back()}
-          className="flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6"
+          className="flex items-center text-sm text-white/50 hover:text-white transition-colors"
         >
           <ArrowLeftIcon className="w-4 h-4 mr-1" />
           Volver
         </button>
 
-        <PageTitle title="Configuración" subtitle="Ajustes y preferencias" />
+        <PageHeader
+          title="Configuración"
+          subtitle="Ajustes de tu sistema operativo personal."
+        />
 
-        <Card>
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Correo electrónico</h3>
-              <p className="text-lg">{user.email}</p>
+        <div className="glass-card p-8 space-y-8">
+          <div className="flex items-center space-x-4 border-b border-white/10 pb-6">
+            <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+              <UserIcon className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <button
-                onClick={handleLogout}
-                className="w-full py-3 px-4 bg-red-50 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors"
-              >
-                Cerrar sesión
-              </button>
+              <h3 className="text-sm font-medium text-white/50 uppercase tracking-wider">Cuenta</h3>
+              <p className="text-lg font-display text-white">{user.email}</p>
             </div>
           </div>
-        </Card>
+
+          <div>
+            <button
+              onClick={handleLogout}
+              className="w-full py-4 px-6 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl font-medium hover:bg-red-500/20 transition-all hover:border-red-500/40"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

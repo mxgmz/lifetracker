@@ -3,9 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import Card from '@/components/Card'
 import SubmitButton from '@/components/SubmitButton'
-import { EnvelopeIcon } from '@heroicons/react/24/outline'
+import { EnvelopeIcon, SparklesIcon } from '@heroicons/react/24/outline'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -37,51 +36,61 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
-        <Card>
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-4">
-              <EnvelopeIcon className="w-6 h-6 text-gray-900" />
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="w-full max-w-md relative z-10">
+        <div className="glass-card p-8 space-y-8">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/5 rounded-2xl border border-white/10 mb-2 shadow-lg shadow-blue-900/20">
+              <SparklesIcon className="w-8 h-8 text-blue-400" />
             </div>
-            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-              Iniciar Sesión
+            <h1 className="text-4xl font-display font-bold text-white tracking-tight">
+              Life OS
             </h1>
-            <p className="text-sm text-gray-600">
-              Ingresa tu correo para recibir un enlace mágico
+            <p className="text-white/50">
+              Tu sistema operativo personal para una vida intencional.
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-white/80 ml-1">
                 Correo electrónico
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@correo.com"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white text-gray-900"
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@correo.com"
+                  required
+                  className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all hover:bg-white/10"
+                />
+                <EnvelopeIcon className="w-5 h-5 text-white/40 absolute left-4 top-1/2 -translate-y-1/2" />
+              </div>
             </div>
 
             {message && (
               <div
-                className={`p-3 rounded-lg text-sm ${
-                  message.includes('Revisa')
-                    ? 'bg-green-50 text-green-800'
-                    : 'bg-red-50 text-red-800'
-                }`}
+                className={`p-4 rounded-xl text-sm border ${message.includes('Revisa')
+                    ? 'bg-green-500/10 border-green-500/20 text-green-200'
+                    : 'bg-red-500/10 border-red-500/20 text-red-200'
+                  }`}
               >
                 {message}
               </div>
             )}
 
-            <SubmitButton label="Enviar enlace mágico" isLoading={isLoading} />
+            <SubmitButton label="Enviar enlace de acceso" isLoading={isLoading} />
           </form>
-        </Card>
+        </div>
+
+        <p className="text-center text-white/30 text-xs mt-8">
+          © 2024 Life OS. All rights reserved.
+        </p>
       </div>
     </div>
   )

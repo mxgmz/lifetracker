@@ -21,8 +21,8 @@ export default function HomePage() {
   }, [router])
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-gray-600">Cargando...</div>
+    <div className="min-h-screen flex items-center justify-center bg-[#050507]">
+      <div className="text-white/50 animate-pulse font-light tracking-widest">CARGANDO SISTEMA...</div>
     </div>
   )
 }

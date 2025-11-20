@@ -7,438 +7,408 @@ import { supabase } from '@/lib/supabaseClient'
 import { getOrCreateFact } from '@/lib/getOrCreateFact'
 import { updateFact } from '@/lib/updateFact'
 import { upsertDimension } from '@/lib/upsertDimension'
-import { getReferenceData, DEFAULT_REFERENCE_DATA } from '@/lib/referenceData'
-import PageHeader from '@/components/PageHeader'
-import FormBlock from '@/components/FormBlock'
-import Slider from '@/components/Slider'
-import Toggle from '@/components/Toggle'
-import Select from '@/components/Select'
-import TextInput from '@/components/TextInput'
-import SubmitButton from '@/components/SubmitButton'
-import { ArrowLeftIcon, BoltIcon, AcademicCapIcon, HeartIcon, ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  ArrowLeftIcon,
+  SunIcon,
+  BoltIcon,
+  SparklesIcon,
+  FlagIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  FireIcon,
+  ChevronRightIcon,
+  HeartIcon,
+  ArrowPathIcon,
+  AcademicCapIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/24/outline'
+
+// --- Components for Steps ---
+
+const StepIntro = ({ user, onNext }) => (
+  <div className="flex flex-col items-center justify-center space-y-8 text-center h-full">
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="p-4 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.2)]"
+    >
+      <SunIcon className="w-12 h-12 text-amber-400" />
+    </motion.div>
+    <div className="space-y-2">
+      <h1 className="text-4xl font-display font-bold text-white">
+        Buenas tardes, {user?.email?.split('@')[0] || 'Guerrero'}
+      </h1>
+      <p className="text-xl text-white/50 font-light">
+        "Examíname, oh Dios, y conoce mi corazón; pruébame y conoce mis pensamientos"
+      </p>
+    </div>
+
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onNext}
+      className="mt-8 px-8 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-amber-900/30 transition-all flex items-center"
+    >
+      Recalibrar Rumbo <ChevronRightIcon className="w-5 h-5 ml-2" />
+    </motion.button>
+  </div>
+)
+
+const StepPriorities = ({ priorities, togglePriority }) => {
+  return (
+    <div className="space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-display font-bold text-white">Misión del Día</h2>
+        <p className="text-white/50">¿Cómo vas con tus objetivos?</p>
+      </div>
+
+      <div className="glass-panel p-6 space-y-4">
+        {priorities.length === 0 ? (
+          <p className="text-center text-white/30 italic">No definiste prioridades esta mañana.</p>
+        ) : (
+          priorities.map((p) => (
+            <button
+              key={p.meta_key}
+              onClick={() => togglePriority(p.meta_key)}
+              className={`w-full p-4 rounded-xl border transition-all flex items-center justify-between group ${p.cumplida
+                  ? 'bg-green-500/20 border-green-500/50'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+            >
+              <span className={`text-lg font-medium ${p.cumplida ? 'text-green-300 line-through' : 'text-white'}`}>
+                {p.descripcion}
+              </span>
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${p.cumplida
+                  ? 'border-green-400 bg-green-400 text-black'
+                  : 'border-white/30 group-hover:border-white/50'
+                }`}>
+                {p.cumplida && <CheckCircleIcon className="w-4 h-4" />}
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+const StepMind = ({ register, watch, setValue }) => {
+  const metrics = [
+    {
+      name: 'ansiedad',
+      label: 'Ansiedad',
+      icon: '😰',
+      inverse: true,
+      subtitles: ['Zen', 'Baja', 'Manejable', 'Alta', 'Pánico']
+    },
+    {
+      name: 'enfoque',
+      label: 'Enfoque',
+      icon: '🎯',
+      subtitles: ['Disperso', 'Distraído', 'Presente', 'Enfocado', 'Láser']
+    },
+    {
+      name: 'animo',
+      label: 'Ánimo',
+      icon: '😐',
+      subtitles: ['Deprimido', 'Bajo', 'Normal', 'Bueno', 'Excelente']
+    },
+    {
+      name: 'estres',
+      label: 'Estrés',
+      icon: '🤯',
+      inverse: true,
+      subtitles: ['Relajado', 'Leve', 'Moderado', 'Alto', 'Burnout']
+    },
+  ]
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-display font-bold text-white">Estado Mental</h2>
+        <p className="text-white/50">Escaneo de medio día</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        {metrics.map((m) => {
+          const val = watch(m.name)
+          return (
+            <div key={m.name} className="glass-card p-4 flex items-center space-x-4">
+              <div className="text-2xl">{m.icon}</div>
+              <div className="flex-1 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/80 font-medium">{m.label}</span>
+                  <div className="text-right">
+                    <span className="text-amber-400 font-bold block">{val}/5</span>
+                    <span className="text-[10px] text-white/40 uppercase tracking-wider">
+                      {m.subtitles[val - 1]}
+                    </span>
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  step="1"
+                  value={val}
+                  onChange={(e) => setValue(m.name, parseInt(e.target.value))}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-500"
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="glass-panel p-4">
+        <textarea
+          {...register('como_va_dia')}
+          rows={2}
+          placeholder="¿Cómo va tu día en una frase?"
+          className="w-full bg-transparent text-white placeholder-white/30 focus:outline-none resize-none"
+        />
+      </div>
+    </div>
+  )
+}
+
+const StepPhysical = ({ register, watch, setValue }) => {
+  const tomeAgua = watch('tome_agua')
+  const comiBien = watch('comi_bien')
+  const microReset = watch('micro_reset')
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-display font-bold text-white">Cuerpo & Reset</h2>
+        <p className="text-white/50">Mantenimiento del vehículo</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        <button
+          type="button"
+          onClick={() => setValue('tome_agua', !tomeAgua)}
+          className={`p-6 rounded-xl border transition-all flex items-center space-x-4 ${tomeAgua ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/10'
+            }`}
+        >
+          <div className={`p-3 rounded-full ${tomeAgua ? 'bg-blue-500 text-white' : 'bg-white/10 text-white/30'}`}>
+            <HeartIcon className="w-6 h-6" />
+          </div>
+          <div className="text-left">
+            <h3 className={`font-bold text-lg ${tomeAgua ? 'text-white' : 'text-white/50'}`}>Hidratación</h3>
+            <p className="text-sm text-white/30">He tomado suficiente agua</p>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setValue('comi_bien', !comiBien)}
+          className={`p-6 rounded-xl border transition-all flex items-center space-x-4 ${comiBien ? 'bg-green-500/20 border-green-500/50' : 'bg-white/5 border-white/10'
+            }`}
+        >
+          <div className={`p-3 rounded-full ${comiBien ? 'bg-green-500 text-white' : 'bg-white/10 text-white/30'}`}>
+            <SparklesIcon className="w-6 h-6" />
+          </div>
+          <div className="text-left">
+            <h3 className={`font-bold text-lg ${comiBien ? 'text-white' : 'text-white/50'}`}>Nutrición</h3>
+            <p className="text-sm text-white/30">Comí alimentos nutritivos</p>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setValue('micro_reset', !microReset)}
+          className={`p-6 rounded-xl border transition-all flex items-center space-x-4 ${microReset ? 'bg-purple-500/20 border-purple-500/50' : 'bg-white/5 border-white/10'
+            }`}
+        >
+          <div className={`p-3 rounded-full ${microReset ? 'bg-purple-500 text-white' : 'bg-white/10 text-white/30'}`}>
+            <ArrowPathIcon className="w-6 h-6" />
+          </div>
+          <div className="text-left">
+            <h3 className={`font-bold text-lg ${microReset ? 'text-white' : 'text-white/50'}`}>Micro-Reset</h3>
+            <p className="text-sm text-white/30">2 min de respiración o pausa</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// --- Main Page Component ---
 
 export default function TardePage() {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [pecados, setPecados] = useState(DEFAULT_REFERENCE_DATA.pecados)
-  const [triggersRef, setTriggersRef] = useState(DEFAULT_REFERENCE_DATA.triggers)
-  const [categorias, setCategorias] = useState(DEFAULT_REFERENCE_DATA.categorias)
+  const [step, setStep] = useState(0)
+  const [priorities, setPriorities] = useState([])
   const router = useRouter()
+
   const { register, handleSubmit, watch, setValue } = useForm({
     defaultValues: {
       ansiedad: 3,
       enfoque: 3,
-      estres: 3,
       animo: 3,
-      ira: 3,
-      tristeza: 3,
-      profundidad: 3,
-      tentacion: false,
-      intensidad: 3,
-      trigger_option: '',
+      estres: 3,
+      tome_agua: false,
+      comi_bien: false,
+      micro_reset: false,
     },
   })
 
-  const tentacion = watch('tentacion')
-  const triggerOption = watch('trigger_option')
-
   useEffect(() => {
-    checkUser()
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/login')
+        return
+      }
+      setUser(session.user)
+      fetchPriorities(session.user.id)
+    }
+    init()
   }, [])
 
-  const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      router.push('/login')
-    } else {
-      setUser(session.user)
-      await populateReferenceData()
-    }
+  const fetchPriorities = async (userId) => {
+    const today = new Date().toISOString().split('T')[0]
+    const { data } = await supabase
+      .from('dim_metas')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date_key', today)
+      .eq('tipo', 'Diaria')
+      .order('orden', { ascending: true })
+
+    if (data) setPriorities(data)
   }
 
-  const populateReferenceData = async () => {
-    const data = await getReferenceData()
-    setPecados(data.pecados)
-    setTriggersRef(data.triggers)
-    setCategorias(data.categorias)
+  const togglePriority = (metaKey) => {
+    setPriorities(prev => prev.map(p =>
+      p.meta_key === metaKey ? { ...p, cumplida: !p.cumplida } : p
+    ))
   }
 
   const onSubmit = async (data) => {
     if (!user) return
-
     setIsLoading(true)
     try {
       const today = new Date().toISOString().split('T')[0]
       const factId = await getOrCreateFact(user.id, today)
 
-      // Update emotional state (afternoon refresh) with new fields + momento_dia
+      // 1. Update Priorities
+      for (const p of priorities) {
+        await supabase
+          .from('dim_metas')
+          .update({ cumplida: p.cumplida })
+          .eq('meta_key', p.meta_key)
+      }
+
+      // 2. Emotional State
       const estadoEmocionalId = await upsertDimension('dim_estado_emocional', {
         user_id: user.id,
         momento_dia: 'Tarde',
         ansiedad: data.ansiedad,
         enfoque: data.enfoque,
         animo: data.animo,
-        ira: data.ira ? parseInt(data.ira) : null,
-        tristeza: data.tristeza ? parseInt(data.tristeza) : null,
-        estabilidad_emocional: data.estabilidad_tarde ? parseInt(data.estabilidad_tarde) : null,
+        estres: data.estres, // Assuming column exists or mapping to something
         descripcion: data.como_va_dia || null,
       })
 
-      const updates = {
-        estado_emocional_key: estadoEmocionalId, // última actualización
-        estado_emocional_tarde_key: estadoEmocionalId, // snapshot tarde
+      // 3. Fact Update
+      await updateFact(factId, {
+        estado_emocional_tarde_key: estadoEmocionalId,
         hora_registro_tarde: new Date().toISOString(),
         ansiedad: data.ansiedad,
         enfoque: data.enfoque,
-        estres: data.estres || null,
+        estres: data.estres,
         reflexion_tarde: data.como_va_dia || null,
-        agua_tomada_tarde: data.tome_agua || false,
-        comida_bien_tarde: data.comi_bien || false,
-        micro_reset_realizado: data.micro_reset || false,
-      }
-
-      // Handle estudio + momento_dia
-      if (data.tema || data.tiempo_min) {
-        const estudioId = await upsertDimension('dim_estudio', {
-          user_id: user.id,
-          momento_dia: 'Tarde',
-          tema: data.tema || null,
-          tiempo_min: data.tiempo_min ? parseInt(data.tiempo_min) : null,
-          profundidad: data.profundidad ? parseInt(data.profundidad) : null,
-          material_usado: data.material_usado || null,
-          insight_aprendido: data.insight_aprendido || null,
-        })
-        updates.estudio_key = estudioId
-
-        const { count: studyCount, error: studyCountError } = await supabase
-          .from('fact_estudios')
-          .select('*', { count: 'exact', head: true })
-          .eq('fact_id', factId)
-        if (studyCountError) {
-          throw new Error(`Failed to count fact_estudios: ${studyCountError.message}`)
-        }
-        await supabase
-          .from('fact_estudios')
-          .insert({
-            fact_id: factId,
-            estudio_key: estudioId,
-            orden: (studyCount || 0) + 1,
-          })
-      }
-
-      // Handle tentación + momento_dia
-      if (data.tentacion && data.tipo_tentacion) {
-        const triggerValue =
-          data.trigger_option && data.trigger_option !== 'otro'
-            ? data.trigger_option
-            : data.trigger_custom || null
-
-        let categoriaValue = data.categoria_tentacion || null
-        if (!categoriaValue && triggerValue) {
-          const match = triggersRef.find((t) => t.nombre === triggerValue)
-          if (match?.categoria) categoriaValue = match.categoria
-        }
-
-        const tentacionId = await upsertDimension('dim_tentacion', {
-          user_id: user.id,
-          momento_dia: 'Tarde',
-          fuente_registro: 'Tarde',
-          hora_aproximada: new Date().toTimeString().split(' ')[0], // HH:MM:SS
-          trigger_principal: triggerValue,
-          pecado_principal: data.tipo_tentacion,
-          nivel_riesgo: data.intensidad ? parseInt(data.intensidad) : null,
-          contexto: data.contexto || null,
-          gano_tentacion: data.gano_tentacion || false,
-          descripcion: data.accion_autocontrol || null,
-          categoria: categoriaValue || null,
-        })
-        updates.tentacion_key = tentacionId
-
-        const { count: tentCount, error: tentError } = await supabase
-          .from('fact_tentaciones')
-          .select('*', { count: 'exact', head: true })
-          .eq('fact_id', factId)
-        if (tentError) {
-          throw new Error(`Failed to count fact_tentaciones: ${tentError.message}`)
-        }
-
-        await supabase
-          .from('fact_tentaciones')
-          .insert({
-            fact_id: factId,
-            tentacion_key: tentacionId,
-            orden: (tentCount || 0) + 1,
-          })
-      }
-
-      await updateFact(factId, updates, user.id)
+        agua_tomada_tarde: data.tome_agua,
+        comida_bien_tarde: data.comi_bien,
+        micro_reset_realizado: data.micro_reset,
+      }, user.id)
 
       router.push('/dashboard?success=tarde')
     } catch (error) {
-      console.error('Error submitting form:', error)
-      alert('Error al guardar: ' + error.message)
+      console.error(error)
+      alert('Error: ' + error.message)
     } finally {
       setIsLoading(false)
     }
   }
 
-  if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>
-  }
+  const steps = [
+    <StepIntro key="intro" user={user} onNext={() => setStep(1)} />,
+    <StepPriorities key="priorities" priorities={priorities} togglePriority={togglePriority} />,
+    <StepMind key="mind" register={register} watch={watch} setValue={setValue} />,
+    <StepPhysical key="physical" register={register} watch={watch} setValue={setValue} />,
+  ]
+
+  const isLastStep = step === steps.length - 1
+
+  if (!user) return <div className="min-h-screen bg-[#050507] flex items-center justify-center text-white/50">Cargando...</div>
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-[680px] mx-auto space-y-8">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeftIcon className="w-4 h-4 mr-1" />
-          Volver
-        </button>
+    <div className="min-h-screen bg-[#050507] text-white overflow-hidden relative">
+      {/* Progress Bar */}
+      {step > 0 && (
+        <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
+          <motion.div
+            className="h-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+            initial={{ width: 0 }}
+            animate={{ width: `${(step / (steps.length - 1)) * 100}%` }}
+          />
+        </div>
+      )}
 
-        <PageHeader 
-          title="Registro de la Tarde"
-          subtitle="Refresca tu mente, revisa tu rumbo, corrige tu curso."
-          scripture="Examíname, oh Dios, y conoce mi corazón; pruébame y conoce mis pensamientos"
-          reference="Salmos 139:23"
-        />
+      {/* Back Button */}
+      <button
+        onClick={() => step === 0 ? router.back() : setStep(s => s - 1)}
+        className="absolute top-6 left-6 p-2 rounded-full hover:bg-white/5 text-white/50 hover:text-white transition-colors z-10"
+      >
+        <ArrowLeftIcon className="w-6 h-6" />
+      </button>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Block 1: Estado Mental (Refresher) */}
-          <FormBlock title="Estado Mental (Refresher)" icon={BoltIcon}>
-            <div className="grid grid-cols-2 gap-4">
-              <Slider
-                label="Ansiedad"
-                name="ansiedad"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('ansiedad')}
-                onChange={(e) => setValue('ansiedad', parseInt(e.target.value))}
-              />
-              <Slider
-                label="Enfoque"
-                name="enfoque"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('enfoque')}
-                onChange={(e) => setValue('enfoque', parseInt(e.target.value))}
-              />
-              <Slider
-                label="Estrés"
-                name="estres"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('estres')}
-                onChange={(e) => setValue('estres', parseInt(e.target.value))}
-              />
-              <Slider
-                label="Ánimo"
-                name="animo"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('animo')}
-                onChange={(e) => setValue('animo', parseInt(e.target.value))}
-              />
-              <Slider
-                label="Ira"
-                name="ira"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('ira')}
-                onChange={(e) => setValue('ira', parseInt(e.target.value))}
-              />
-              <Slider
-                label="Tristeza"
-                name="tristeza"
-                register={register}
-                min={1}
-                max={5}
-                value={watch('tristeza')}
-                onChange={(e) => setValue('tristeza', parseInt(e.target.value))}
-              />
-            </div>
-            <TextInput
-              label="¿Cómo va tu día? (1-2 líneas)"
-              name="como_va_dia"
-              rows={2}
-              placeholder="Describe brevemente..."
-              register={register}
-            />
-            <Slider
-              label="Estabilidad emocional (1-5)"
-              name="estabilidad_tarde"
-              register={register}
-              min={1}
-              max={5}
-              value={watch('estabilidad_tarde')}
-              onChange={(e) => setValue('estabilidad_tarde', parseInt(e.target.value))}
-            />
-            <TextInput
-              label="Descripción / contexto emocional"
-              name="descripcion_emocional_tarde"
-              rows={2}
-              placeholder="Detalle adicional..."
-              register={register}
-            />
-          </FormBlock>
+      {/* Main Content Area */}
+      <div className="h-screen flex flex-col items-center justify-center p-6 max-w-lg mx-auto">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full"
+          >
+            {steps[step]}
+          </motion.div>
+        </AnimatePresence>
 
-          {/* Block 2: Estudio */}
-          <FormBlock title="Estudio" icon={AcademicCapIcon}>
-              <TextInput
-                label="Tema"
-                name="tema"
-                placeholder="¿Qué estudiaste?"
-                register={register}
-              />
-              <TextInput
-              label="Tiempo (minutos)"
-              name="tiempo_min"
-                type="number"
-                placeholder="0"
-                register={register}
-              />
-              <Slider
-                label="Profundidad"
-                name="profundidad"
-                register={register}
-                min={1}
-              max={5}
-              value={watch('profundidad')}
-                onChange={(e) => setValue('profundidad', parseInt(e.target.value))}
-              />
-              <Select
-                label="Material usado"
-                name="material_usado"
-                register={register}
-                options={[
-                { value: 'Video', label: 'Video' },
-                  { value: 'Libro', label: 'Libro' },
-                { value: 'Clase', label: 'Clase' },
-                { value: 'Proyecto', label: 'Proyecto' },
-                  { value: 'Otro', label: 'Otro' },
-                ]}
-                placeholder="Selecciona..."
-              />
-            <TextInput
-              label="Insight aprendido"
-              name="insight_aprendido"
-              rows={3}
-              placeholder="¿Qué aprendiste?"
-              register={register}
-            />
-          </FormBlock>
-
-          {/* Block 3: Disciplina Física */}
-          <FormBlock title="Disciplina Física" icon={HeartIcon}>
-            <div className="grid grid-cols-2 gap-4">
-              <Toggle
-                label="Tomé agua"
-                name="tome_agua"
-                register={register}
-              />
-              <Toggle
-                label="Comí bien"
-                name="comi_bien"
-                register={register}
-              />
-            </div>
-          </FormBlock>
-
-          {/* Block 4: Micro-Restablecimiento */}
-          <FormBlock title="Micro-Restablecimiento" icon={ArrowPathIcon}>
-            <Toggle
-              label="Realicé un micro-reset de 2 minutos (respiración, silencio o plegaria)"
-              name="micro_reset"
-              register={register}
-            />
-          </FormBlock>
-
-          {/* Block 5: Tentación */}
-          <FormBlock title="Tentación" icon={ExclamationTriangleIcon}>
-              <Toggle
-                label="¿Tuviste una tentación?"
-                name="tentacion"
-                register={register}
-              />
-              {tentacion && (
-              <div className="space-y-4 pt-2">
-                  <Select
-                  label="Tipo"
-                    name="tipo_tentacion"
-                    register={register}
-                    required
-                    options={[
-                    ...pecados.map((p) => ({ value: p, label: p })),
-                      { value: 'Otro', label: 'Otro' },
-                    ]}
-                    placeholder="Selecciona..."
-                  />
-                <Select
-                  label="Trigger"
-                  name="trigger_option"
-                  register={register}
-                  options={[
-                    ...triggersRef.map((t) => ({ value: t.nombre, label: t.nombre })),
-                    { value: 'otro', label: 'Otro' },
-                  ]}
-                  placeholder="¿Qué la desencadenó?"
-                />
-                {triggerOption === 'otro' && (
-                  <TextInput
-                    label="Trigger personalizado"
-                    name="trigger_custom"
-                    placeholder="Describe el detonante"
-                    register={register}
-                  />
-                )}
-                  <Slider
-                    label="Intensidad"
-                    name="intensidad"
-                    register={register}
-                    min={1}
-                  max={5}
-                  value={watch('intensidad')}
-                    onChange={(e) => setValue('intensidad', parseInt(e.target.value))}
-                  />
-                <TextInput
-                  label="Contexto"
-                  name="contexto"
-                  placeholder="¿Dónde estabas? ¿Qué hacías?"
-                  register={register}
-                />
-                <Select
-                  label="Categoría / contexto"
-                  name="categoria_tentacion"
-                  register={register}
-                  options={[
-                    ...categorias.map((c) => ({ value: c, label: c })),
-                    { value: 'Otro', label: 'Otro' },
-                  ]}
-                  placeholder="¿Qué tipo de tentación fue?"
-                />
-                  <TextInput
-                    label="Acción de autocontrol"
-                    name="accion_autocontrol"
-                    placeholder="¿Qué hiciste?"
-                    register={register}
-                  />
-                <Toggle
-                  label="¿Ganaste?"
-                  name="gano_tentacion"
-                  register={register}
-                />
-              </div>
-              )}
-          </FormBlock>
-
-            <SubmitButton label="Guardar Tarde" isLoading={isLoading} />
-          </form>
+        {/* Navigation Actions (only for steps > 0) */}
+        {step > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-8 w-full flex justify-end"
+          >
+            {isLastStep ? (
+              <button
+                onClick={handleSubmit(onSubmit)}
+                disabled={isLoading}
+                className="w-full py-4 bg-gradient-to-r from-amber-600 to-amber-500 rounded-2xl font-bold text-lg shadow-lg shadow-amber-900/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center"
+              >
+                {isLoading ? 'Guardando...' : 'Finalizar Recalibración'}
+                {!isLoading && <FlagIcon className="w-5 h-5 ml-2" />}
+              </button>
+            ) : (
+              <button
+                onClick={() => setStep(s => s + 1)}
+                className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium text-white transition-all flex items-center"
+              >
+                Siguiente <ChevronRightIcon className="w-4 h-4 ml-2" />
+              </button>
+            )}
+          </motion.div>
+        )}
       </div>
     </div>
   )
